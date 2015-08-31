@@ -1,0 +1,8 @@
+get_attr
+get_file
+get_param
+get_resource
+list_join
+resource_facade
+str_replace
+Fn::Select
