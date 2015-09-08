@@ -1,6 +1,9 @@
 package au.org.v3;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,6 +14,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static java.util.Arrays.stream;
 
 public class ResourceMapper {
 
@@ -30,6 +35,23 @@ public class ResourceMapper {
     private static final String FUNCTION_RESOURCE_URL = "http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#";
     private static final String NOT_YET_SUPPORTED = "\t\tis not yet supported on the NeCTAR cloud.";
 
+    private static final String[] CUSTOM_CONSTRAINTS = {
+            "nova.flavor", // = heat.engine.resources.server:FlavorConstraint
+            "neutron.network", // = heat.engine.clients.os.neutron:NetworkConstraint
+            "neutron.port", // = heat.engine.clients.os.neutron:PortConstraint
+            "neutron.router", // = heat.engine.clients.os.neutron:RouterConstraint
+            "neutron.subnet", // = heat.engine.clients.os.neutron:SubnetConstraint
+            "glance.image", // = heat.engine.clients.os.glance:ImageConstraint
+            "iso_8601", // = heat.engine.resources.iso_8601:ISO8601Constraint
+            "nova.keypair", // = heat.engine.resources.nova_keypair:KeypairConstraint
+    };
+
+    private static final String[] PSEUDO_PARAMETERS = {
+            "OS::stack_name",
+            "OS::stack_id",
+            "OS::project_id"
+    };
+
     private PrintWriter out;
 
     public static void main(String[] args) throws IOException {
@@ -45,6 +67,12 @@ public class ResourceMapper {
         out.println("## Functions");
         out.println();
         findInTemplates(FUNCTIONS);
+        out.println("## Pseudo-Parameters");
+        out.println();
+        stream(PSEUDO_PARAMETERS).forEach(matchInTemplates());
+        out.println("## Custom-constraints");
+        out.println();
+        stream(CUSTOM_CONSTRAINTS).forEach(matchInTemplates());
         out.flush();
     }
 
@@ -82,23 +110,26 @@ public class ResourceMapper {
 
     private void printResourceType(String resourceType) {
         String baseUrl = getBaseUrl(resourceType);
-        Optional<String> unsupported = Arrays.stream(UNSUPPORTED).
+        Optional<String> unsupported = stream(UNSUPPORTED).
                 filter(s -> resourceType.toLowerCase().contains(s.toLowerCase())).
                 findFirst();
         out.print(unsupported.isPresent() ? printRedCross() : printGreenTick());
-        out.print("[" + resourceType + "](" + baseUrl + resourceType + ")");
+        if (Arrays.asList(CUSTOM_CONSTRAINTS).contains(resourceType) || Arrays.asList(PSEUDO_PARAMETERS).contains(resourceType)) {
+            out.print(resourceType);
+        } else {
+            out.print("[" + resourceType + "](" + baseUrl + resourceType + ")");
+        }
         unsupported.ifPresent(x -> out.print(NOT_YET_SUPPORTED));
         out.println("<br />");
     }
 
     private String getBaseUrl(String resourceType) {
-        String baseUrl = FUNCTION_RESOURCE_URL;
         if (resourceType.startsWith("OS::")) {
-            baseUrl = NATIVE_RESOURCE_URL;
+            return NATIVE_RESOURCE_URL;
         } else if (resourceType.startsWith("AWS::")) {
-            baseUrl = AMAZON_RESOURCE_URL;
+            return AMAZON_RESOURCE_URL;
         }
-        return baseUrl;
+        return FUNCTION_RESOURCE_URL;
     }
 
     private String printRedCross() {
