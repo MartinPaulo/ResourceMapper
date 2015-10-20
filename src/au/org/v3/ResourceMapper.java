@@ -26,6 +26,7 @@ public class ResourceMapper {
     private static final String[] UNSUPPORTED = {
             "Barbican", "Gnocchi", "Keystone", "Magnum", "Manila", "Mistral", "Neutron", "Sahara", "Zaqar",
             "OS::Cinder::EncryptedVolumeType", "OS::Cinder::VolumeType", "Designate", "OS::Nova::FloatingIP",
+            // "AWS::CloudWatch::Alarm",   // if only because we can't find it in the OpenStack documentation
             "AWS::EC2::EIP", "AWS::EC2::InternetGateway", "AWS::EC2::NetworkInterface", "AWS::EC2::RouteTable",
             "AWS::EC2::Subnet", "AWS::EC2::SubnetRouteTableAssociation", "AWS::EC2::VPC", "AWS::EC2::VPCGatewayAttachment",
             "OS::Heat::None", "OS::Heat::StructuredDeploymentGroup", "OS::Heat::SoftwareDeploymentGroup",
