@@ -49,9 +49,11 @@ public class ResourceMapper {
             "OS::stack_id",
             "OS::project_id"
     };
-    public static final String RESOURCES_TAG = "## Resources";
-    public static final String TEMP_FILE = "/Users/martinpaulo/PycharmProjects/heat-templates/README.tmp";
-    public static final String INPUT_FILE = "/Users/martinpaulo/PycharmProjects/heat-templates/README.md";
+    private static final String RESOURCES_TAG = "## Resources";
+    private static final String TEMP_FILE = "/Users/martinpaulo/PycharmProjects/heat-templates/README.tmp";
+    private static final String INPUT_FILE = "/Users/martinpaulo/PycharmProjects/heat-templates/README.md";
+    private static final String GREEN_TICK = "<span style=\"color:green\">✔</span>&nbsp;";
+    private static final String RED_CROSS = "<span style=\"color:red\">✘</span>&nbsp;";
 
     private PrintWriter out;
 
@@ -59,7 +61,7 @@ public class ResourceMapper {
         new ResourceMapper().run();
     }
 
-    public void run() {
+    private void run() {
         File outFile = new File(TEMP_FILE);
         File inFile = new File(INPUT_FILE);
         try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(inFile)))) {
@@ -86,7 +88,6 @@ public class ResourceMapper {
         }
 
     }
-
 
     private void addContent() {
         out.println(RESOURCES_TAG);
@@ -143,7 +144,7 @@ public class ResourceMapper {
         Optional<String> unsupported = stream(UNSUPPORTED).
                 filter(s -> resourceType.toLowerCase().contains(s.toLowerCase())).
                 findFirst();
-        out.print(unsupported.isPresent() ? printRedCross() : printGreenTick());
+        out.print(unsupported.isPresent() ? RED_CROSS : GREEN_TICK);
         if (Arrays.asList(CUSTOM_CONSTRAINTS).contains(resourceType) || Arrays.asList(PSEUDO_PARAMETERS).contains(resourceType)) {
             out.print(resourceType);
         } else {
@@ -160,14 +161,6 @@ public class ResourceMapper {
             return AMAZON_RESOURCE_URL;
         }
         return FUNCTION_RESOURCE_URL;
-    }
-
-    private String printRedCross() {
-        return "<span style=\"color:red\">✘</span>&nbsp;";
-    }
-
-    private String printGreenTick() {
-        return "<span style=\"color:green\">✔</span>&nbsp;";
     }
 
     private void outputPathAsLink(Path path) {
