@@ -27,7 +27,7 @@ public class ResourceMapper {
             "AWS::EC2::EIP", "AWS::EC2::InternetGateway", "AWS::EC2::NetworkInterface", "AWS::EC2::RouteTable",
             "AWS::EC2::Subnet", "AWS::EC2::SubnetRouteTableAssociation", "AWS::EC2::VPC", "AWS::EC2::VPCGatewayAttachment",
             "OS::Heat::None", "OS::Heat::StructuredDeploymentGroup", "OS::Heat::SoftwareDeploymentGroup",
-            "OS::Nova::ServerGroup", "OS::Nova::Flavor", "OS::Heat::Stack"};
+            "OS::Nova::ServerGroup", "OS::Nova::Flavor"};
     private static final String NATIVE_RESOURCE_URL = "http://docs.openstack.org/developer/heat/template_guide/openstack.html#";
     private static final String AMAZON_RESOURCE_URL = "http://docs.openstack.org/developer/heat/template_guide/cfn.html#";
     private static final String FUNCTION_RESOURCE_URL = "http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#";
