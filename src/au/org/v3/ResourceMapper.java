@@ -7,31 +7,23 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Arrays.stream;
 
 public class ResourceMapper {
 
+    // should get from heat
     private static final String RESOURCES = "/Users/martinpaulo/Documents/Courses/Java8/ResourceMapper/src/ResourceTypes.txt";
     private static final String DIR_TEMPLATES = "/Users/martinpaulo/PycharmProjects/heat-templates";
     private static final String FUNCTIONS = "/Users/martinpaulo/Documents/Courses/Java8/ResourceMapper/src/Functions.txt";
 
-    private static final String[] UNSUPPORTED = {
-            "Barbican", "Gnocchi", "Keystone", "Magnum", "Manila", "Mistral", "Neutron", "Sahara", "Zaqar",
-            "OS::Cinder::EncryptedVolumeType", "OS::Cinder::VolumeType", "Designate", "OS::Nova::FloatingIP",
-            // "AWS::CloudWatch::Alarm",   // if only because we can't find it in the OpenStack documentation
-            "AWS::EC2::EIP", "AWS::EC2::InternetGateway", "AWS::EC2::NetworkInterface", "AWS::EC2::RouteTable",
-            "AWS::EC2::Subnet", "AWS::EC2::SubnetRouteTableAssociation", "AWS::EC2::VPC", "AWS::EC2::VPCGatewayAttachment",
-            "OS::Heat::None", "OS::Heat::StructuredDeploymentGroup", "OS::Heat::SoftwareDeploymentGroup",
-            "OS::Nova::ServerGroup", "OS::Nova::Flavor"};
     private static final String NATIVE_RESOURCE_URL = "http://docs.openstack.org/developer/heat/template_guide/openstack.html#";
     private static final String AMAZON_RESOURCE_URL = "http://docs.openstack.org/developer/heat/template_guide/cfn.html#";
     private static final String FUNCTION_RESOURCE_URL = "http://docs.openstack.org/developer/heat/template_guide/hot_spec.html#";
-    private static final String NOT_YET_SUPPORTED = "\t\tis not yet supported on the NeCTAR cloud.";
 
     private static final String[] CUSTOM_CONSTRAINTS = {
             "nova.flavor", // = heat.engine.resources.server:FlavorConstraint
@@ -52,8 +44,6 @@ public class ResourceMapper {
     private static final String RESOURCES_TAG = "## Resources";
     private static final String TEMP_FILE = "/Users/martinpaulo/PycharmProjects/heat-templates/README.tmp";
     private static final String INPUT_FILE = "/Users/martinpaulo/PycharmProjects/heat-templates/README.md";
-    private static final String GREEN_TICK = "<span style=\"color:green\">✔</span>&nbsp;";
-    private static final String RED_CROSS = "<span style=\"color:red\">✘</span>&nbsp;";
 
     private PrintWriter out;
 
@@ -92,7 +82,7 @@ public class ResourceMapper {
     private void addContent() {
         out.println(RESOURCES_TAG);
         out.println();
-        out.println("The following is a map showing the list of supported resources, and the templates that showcase them.");
+        out.println("The following are the resources covered in the repository: and links to the templates using them.");
         out.println();
         findInTemplates(RESOURCES);
         out.println("## Functions");
@@ -118,19 +108,15 @@ public class ResourceMapper {
 
     private Consumer<String> matchInTemplates() {
         return targetWord -> {
-            printResourceType(targetWord);
             try {
-                // instead of doing a for each, we will do a hacky reduction.
-                // this means that we will know if there were values, and if so
-                // print an extra line at the end.
-                Path path = Files.walk(new File(DIR_TEMPLATES).toPath())
+                Stream<Path> pathStream = Files.walk(new File(DIR_TEMPLATES).toPath())
                         .filter(p -> p.getFileName().toString().endsWith(".yaml"))
-                        .filter(examineFile(targetWord))
-                        .reduce(null, (previous, current) -> {
-                            outputPathAsLink(current);
-                            return current;
-                        });
-                if (path != null) {
+                        .filter(examineFile(targetWord));
+                List<String> templates = pathStream.map(this::outputPathAsLink).collect(Collectors.toList());
+                if (templates.size() > 0) {
+                    printResourceType(targetWord);
+                    out.println();
+                    templates.forEach(out::println);
                     out.println();
                 }
             } catch (IOException e) {
@@ -141,16 +127,11 @@ public class ResourceMapper {
 
     private void printResourceType(String resourceType) {
         String baseUrl = getBaseUrl(resourceType);
-        Optional<String> unsupported = stream(UNSUPPORTED).
-                filter(s -> resourceType.toLowerCase().contains(s.toLowerCase())).
-                findFirst();
-        out.print(unsupported.isPresent() ? RED_CROSS : GREEN_TICK);
         if (Arrays.asList(CUSTOM_CONSTRAINTS).contains(resourceType) || Arrays.asList(PSEUDO_PARAMETERS).contains(resourceType)) {
             out.print(resourceType);
         } else {
             out.print("[" + resourceType + "](" + baseUrl + resourceType + ")");
         }
-        unsupported.ifPresent(x -> out.print(NOT_YET_SUPPORTED));
         out.println("<br />");
     }
 
@@ -163,10 +144,11 @@ public class ResourceMapper {
         return FUNCTION_RESOURCE_URL;
     }
 
-    private void outputPathAsLink(Path path) {
+    private String outputPathAsLink(Path path) {
         String relativePath = path.toString().replace("/Users/martinpaulo/PycharmProjects/heat-templates", "");
         Path fileName = path.getFileName();
-        out.println("* [" + fileName + "](" + relativePath + ")");
+        return "* [" + fileName + "](" + relativePath + ")";
+
     }
 
     private Predicate<? super Path> examineFile(String resourceType) {
